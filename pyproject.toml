@@ -3,12 +3,34 @@ name = "daw-fs26"
 version = "0.1.0"
 requires-python = ">=3.13"
 dependencies = [
-    "matplotlib>=3.10.8",
-    "numpy>=2.4.2",
-    "pandas>=3.0.1",
+    "numpy",
+    "pandas",
+    "matplotlib",
 ]
 
 [dependency-groups]
 dev = [
-    "ipykernel>=7.2.0",
+    "ipykernel",
+    "pytest",
+    "pytest-cov",
+    "ruff",
 ]
+
+# Damit "src/" Layout für Tests sauber funktioniert
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+pythonpath = ["src"]
+addopts = "-ra"
+
+[tool.ruff]
+line-length = 100
+target-version = "py313"
+extend-exclude = ["data", "notebooks"]
+
+[tool.ruff.lint]
+# Baseline für Clean Code
+select = ["E", "F", "I", "B", "UP"]
+ignore = ["E501"]  # wenn du line-length nicht strikt erzwingen willst
+
+[tool.ruff.lint.isort]
+known-first-party = ["myproj"]
