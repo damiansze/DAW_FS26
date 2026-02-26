@@ -60,12 +60,19 @@ uv run python -m myproj.pipeline
 uv run pytest
 ```
 
-### 5. Linting prüfen
+### 5. Pre-commit Hooks einrichten
+```bash
+uv run pre-commit install
+```
+Damit wird bei jedem `git commit` automatisch **Ruff Lint + Format** geprüft.
+
+### 6. Linting manuell prüfen
 ```bash
 uv run ruff check .
+uv run ruff format --check .
 ```
 
-### 6. Code Coverage messen
+### 7. Code Coverage messen
 ```bash
 uv run pytest --cov=myproj --cov-report=term --cov-report=html
 ```
@@ -77,7 +84,8 @@ uv run pytest --cov=myproj --cov-report=term --cov-report=html
 
 ```text
 .
-├─ .github/workflows/ci.yml      # CI Pipeline (uv sync, ruff, pytest, coverage)
+├─ .github/workflows/ci.yml      # CI Pipeline (Lint → Tests, getrennte Jobs)
+├─ .pre-commit-config.yaml       # Pre-commit Hooks (Ruff Lint + Format)
 ├─ notebooks/                    # Jupyter Notebooks (Exploration/Dokumentation)
 │  ├─ 01_import.ipynb            # (geplant) Datenimport explorieren
 │  ├─ 02_clean.ipynb             # (geplant) Bereinigung dokumentieren
@@ -132,13 +140,18 @@ uv run pytest --cov=myproj --cov-report=term --cov-report=html
 ## CI/CD (GitHub Actions)
 
 ### Was wird geprüft?
-Die Pipeline (`.github/workflows/ci.yml`) führt bei jedem **Push** und **Pull Request** folgende Schritte aus:
+Die Pipeline (`.github/workflows/ci.yml`) führt bei jedem **Push auf `main`** und **Pull Request gegen `main`** folgende Jobs aus:
 
-1. **Checkout Code**
-2. **Install uv & Sync Dependencies** (`uv sync --frozen`)
-3. **Linting** (`ruff check .`) → Code-Stil und Best Practices
-4. **Tests** (`pytest`) → Alle Unit Tests müssen grün sein
-5. **Coverage** (`pytest --cov`) → Prüft Test-Abdeckung (Threshold konfigurierbar)
+**Job 1 – Lint (Ruff)**
+1. Checkout Code
+2. Install uv & Sync Dependencies (`uv sync --frozen`)
+3. `ruff check .` → Code-Stil und Best Practices
+4. `ruff format --check .` → Formatting-Konsistenz
+
+**Job 2 – Tests (pytest)** *(läuft nur, wenn Lint erfolgreich)*
+1. Checkout Code
+2. Install uv & Sync Dependencies (`uv sync --frozen`)
+3. `pytest --cov=src --cov-fail-under=50` → Tests + Coverage
 
 ### Status prüfen
 - **GitHub:** `Actions`-Tab im Repository → grüner Haken = CI erfolgreich
@@ -184,5 +197,6 @@ Die Pipeline (`.github/workflows/ci.yml`) führt bei jedem **Push** und **Pull R
 | **ruff** | Linting und Formatting |
 | **pytest** | Unit Testing Framework |
 | **pytest-cov** | Code Coverage Messung |
-| **GitHub Actions** | CI/CD Pipeline |
+| **pre-commit** | Git Hooks für automatisches Linting bei jedem Commit |
+| **GitHub Actions** | CI/CD Pipeline (Lint + Tests) |
 | **Git/GitHub** | Version Control und Kollaboration |
