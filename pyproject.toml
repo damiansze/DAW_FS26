@@ -14,6 +14,7 @@ dependencies = [
 [dependency-groups]
 dev = [
     "ipykernel",
+    "pre-commit",
     "pytest",
     "pytest-cov",
     "ruff",

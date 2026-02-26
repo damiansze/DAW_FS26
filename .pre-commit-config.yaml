@@ -1,0 +1,10 @@
+# Pre-commit hooks – werden bei jedem `git commit` ausgeführt
+# Docs: https://pre-commit.com
+repos:
+  # Ruff – Linting & Formatting
+  - repo: https://github.com/astral-sh/ruff-pre-commit
+    rev: v0.15.2  # gleiche Version wie in .ruff_cache
+    hooks:
+      - id: ruff          # Lint-Check (entspricht `ruff check`)
+        args: [--fix]
+      - id: ruff-format   # Formatting-Check (entspricht `ruff format --check`)
