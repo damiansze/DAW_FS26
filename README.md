@@ -50,6 +50,7 @@ Das installiert alle Abhängigkeiten aus `pyproject.toml` und `uv.lock` in ein v
 
 ### 3. Pipeline ausführen
 ```bash
+uv pip install -e . # einmal ausführen nach anlegen vom .venv
 uv run python -m myproj.pipeline
 ```
 **Output:** Erzeugt Dateien in `data/processed/` (z. B. `example.parquet`).
