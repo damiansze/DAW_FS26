@@ -1,3 +1,7 @@
+[build-system]
+requires = ["setuptools>=69", "wheel"]
+build-backend = "setuptools.build_meta"
+
 [project]
 name = "daw-fs26"
 version = "0.1.0"
@@ -11,18 +15,16 @@ dependencies = [
     "fastparquet>=2025.12.0",
     "xarray>=2026.2.0",
     "netcdf4>=1.7.4",
+    "openpyxl",
 ]
 
-[dependency-groups]
-dev = [
-    "ipykernel",
-    "pre-commit",
-    "pytest",
-    "pytest-cov",
-    "ruff",
-]
+[tool.setuptools]
+package-dir = {"" = "src"}
 
-# Damit "src/" Layout für Tests sauber funktioniert
+[tool.setuptools.packages.find]
+where = ["src"]
+include = ["myproj*"]
+
 [tool.pytest.ini_options]
 testpaths = ["tests"]
 pythonpath = ["src"]
@@ -34,9 +36,8 @@ target-version = "py313"
 extend-exclude = ["data", "notebooks"]
 
 [tool.ruff.lint]
-# Baseline für Clean Code
 select = ["E", "F", "I", "B", "UP"]
-ignore = ["E501"]  # wenn du line-length nicht strikt erzwingen willst
+ignore = ["E501"]
 
 [tool.ruff.lint.isort]
 known-first-party = ["myproj"]
