@@ -37,7 +37,7 @@ def get_raw_file_path(filename: str) -> Path:
     return file_path
 
 
-def load_raw_data(filename: str):
+def load_raw_data(filename: str, encoding: str = "utf-8"):
     """
     Lädt eine Datei aus data/raw abhängig von ihrer Dateiendung.
 
@@ -52,12 +52,6 @@ def load_raw_data(filename: str):
 
     if suffix in [".xlsx", ".xls"]:
         return pd.read_excel(file_path)
-
-    if suffix == ".csv":
-        return pd.read_csv(file_path)
-
-    if suffix == ".parquet":
-        return pd.read_parquet(file_path)
 
     if suffix == ".nc":
         return xr.open_dataset(file_path)
