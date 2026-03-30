@@ -42,3 +42,8 @@ ignore = ["E501"]
 
 [tool.ruff.lint.isort]
 known-first-party = ["myproj"]
+
+[dependency-groups]
+dev = [
+    "ruff>=0.15.8",
+]
