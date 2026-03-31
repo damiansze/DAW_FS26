@@ -43,8 +43,6 @@ def load_raw_data(filename: str, encoding: str = "utf-8"):
 
     Unterstützte Formate:
     - .xlsx, .xls -> pandas DataFrame
-    - .csv -> pandas DataFrame
-    - .parquet -> pandas DataFrame
     - .nc -> xarray Dataset
     """
     file_path = get_raw_file_path(filename)
@@ -54,9 +52,8 @@ def load_raw_data(filename: str, encoding: str = "utf-8"):
         return pd.read_excel(file_path)
 
     if suffix == ".nc":
-        return xr.open_dataset(file_path)
+        return xr.open_dataset(file_path, engine="h5netcdf")
 
     raise ValueError(
-        f"Nicht unterstütztes Dateiformat: {suffix}. "
-        "Unterstützt werden .xlsx, .xls, .csv, .parquet, .nc"
+        f"Nicht unterstütztes Dateiformat: {suffix}. Unterstützt werden .xlsx, .xls, .nc"
     )
