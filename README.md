@@ -19,9 +19,29 @@ Ziel ist eine reproduzierbare Datenpipeline (Import → Bereinigen → Transform
 - **CI/CD:** GitHub Actions Pipeline prüft bei jedem Push/PR: Dependencies, Lint, Tests, Coverage
 - **Code Coverage:** Mindestabdeckung wird gemessen (`pytest-cov`)
 
-### Datenquellen (Platzhalter)
-1. **Datenquelle A:** _(TODO: Beschreibung ergänzen)_
-2. **Datenquelle B:** _(TODO: Beschreibung ergänzen)_
+### Datenquellen
+1. **EM-DAT Disaster Data**  
+   Excel-Datei mit Ereignisdaten zu Katastrophen (`public_emdat_1991_2024.xlsx`).  
+   Die Datei enthält Informationen zu Katastrophentypen, betroffenen Ländern, Zeitpunkten und weiteren ereignisbezogenen Merkmalen.
+
+2. **Climate Anomaly Data**  
+   NetCDF-Datei mit klimabezogenen Anomaliedaten (`omi_climate_sl_medsea_area_averaged_anomalies_19990220_P20250729.nc`).  
+   Die Datei ist als xarray-Dataset strukturiert und enthält zeitbezogene Messwerte bzw. Anomalien, die später mit den Ereignisdaten in Beziehung gesetzt werden können.
+
+### Importlogik
+Der Datenimport wird über allgemeine Funktionen in `src/myproj/io/import_data.py` umgesetzt.  
+Die Rohdaten werden aus dem Ordner `data/raw/` geladen. Je nach Dateiendung werden unterschiedliche Reader verwendet:
+
+- `.xlsx`, `.xls` → `pandas.read_excel()`
+- `.nc` → `xarray.open_dataset(..., engine="h5netcdf")`
+
+Dadurch ist der Import flexibel und kann auch für weitere Rohdatenquellen wiederverwendet werden.
+
+
+### Aktueller Projektstand
+Aktuell liegt der Fokus auf **LE1 Import** und der technischen Projektstruktur.  
+Die Rohdaten werden aus `data/raw/` geladen und im Notebook explorativ untersucht.  
+Der Importcode ist im Paket `myproj.io` gekapselt, sodass dieselbe Logik später auch in der Pipeline wiederverwendet werden kann.
 
 ### Linking-Strategie & finaler Datensatz
 _(TODO: Beschreibung der Verknüpfungslogik und vom finalen Outputs ergänzen)_
@@ -46,11 +66,10 @@ Dann:
 ```bash
 uv sync
 ```
-Das installiert alle Abhängigkeiten aus `pyproject.toml` und `uv.lock` in ein venv.
+Das installiert die Projekt- und Dev-Abhängigkeiten aus `pyproject.toml` und `uv.lock` in ein venv.
 
 ### 3. Pipeline ausführen
 ```bash
-uv pip install -e . # einmal ausführen nach anlegen vom .venv
 uv run python -m myproj.pipeline
 ```
 **Output:** Erzeugt Dateien in `data/processed/` (z. B. `example.parquet`).
