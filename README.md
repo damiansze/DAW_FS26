@@ -33,9 +33,7 @@ Der Datenimport wird über allgemeine Funktionen in `src/myproj/io/import_data.p
 Die Rohdaten werden aus dem Ordner `data/raw/` geladen. Je nach Dateiendung werden unterschiedliche Reader verwendet:
 
 - `.xlsx`, `.xls` → `pandas.read_excel()`
-- `.csv` → `pandas.read_csv()`
-- `.parquet` → `pandas.read_parquet()`
-- `.nc` → `xarray.open_dataset()`
+- `.nc` → `xarray.open_dataset(..., engine="h5netcdf")`
 
 Dadurch ist der Import flexibel und kann auch für weitere Rohdatenquellen wiederverwendet werden.
 
@@ -68,11 +66,10 @@ Dann:
 ```bash
 uv sync
 ```
-Das installiert alle Abhängigkeiten aus `pyproject.toml` und `uv.lock` in ein venv.
+Das installiert die Projekt- und Dev-Abhängigkeiten aus `pyproject.toml` und `uv.lock` in ein venv.
 
 ### 3. Pipeline ausführen
 ```bash
-uv pip install -e . # einmal ausführen nach anlegen vom .venv
 uv run python -m myproj.pipeline
 ```
 **Output:** Erzeugt Dateien in `data/processed/` (z. B. `example.parquet`).
