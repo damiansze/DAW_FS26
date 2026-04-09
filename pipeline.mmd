@@ -1,0 +1,49 @@
+flowchart TD
+    %% ── IMPORT ──────────────────────────────────────────────
+    subgraph IMP["1 · Import"]
+        I1["public_emdat_1991_2024.xlsx\n(Excel)"]
+        I2["omi_climate_sl_...nc\n(NetCDF)"]
+    end
+
+    %% ── TRANSFORM 1 ─────────────────────────────────────────
+    subgraph T1["2 · Transform I"]
+        T1A["Irrelevante Spalten entfernen\nBeibehaltene Spalten:\n→ 15 EMDAT-Spalten inkl. DisNo.\n→ time + 2 Sea-Level-Werte"]
+    end
+
+    %% ── CLEANING ─────────────────────────────────────────────
+    subgraph CL["3 · Cleaning"]
+        CL1["Duplikate entfernen"]
+        CL2["NA behandeln"]
+        CL3["Outlier flaggen\n(IQR-Methode, Spalte is_outlier)"]
+        CL4["Logging\n– Anzahl entfernter Duplikate\n– Anzahl imputierter Werte\n– Anzahl geflaggter Outlier"]
+        CL1 --> CL2 --> CL3 --> CL4
+    end
+
+    %% ── TRANSFORM 2 ─────────────────────────────────────────
+    subgraph T2["4 · Transform II"]
+        T2A["Einheitliches Datum\nStart Year + Start Month\n→ period (YYYY-MM)"]
+        T2B["EMDAT filtern: Start Year ≥ 1999\n+ relevante Disaster Types"]
+        T2C["EMDAT aggregieren auf Monatsebene\n(Anzahl Ereignisse, Summe Deaths / Affected)"]
+        T2D["Sea Level auf Monatsebene aggregieren\n(Mittelwert je Monat)"]
+        T2A --> T2B --> T2C
+        T2A --> T2D
+    end
+
+    %% ── JOIN ─────────────────────────────────────────────────
+    subgraph JN["5 · Verknüpfung"]
+        J1["Left Join\nEMDAT (monatlich) ← Sea Level (monatlich)\nKey: period (YYYY-MM)"]
+    end
+
+    %% ── SPEICHERN ────────────────────────────────────────────
+    subgraph SV["6 · Speichern"]
+        S1["data/processed/final.parquet"]
+    end
+
+    %% ── VERBINDUNGEN ─────────────────────────────────────────
+    I1 --> T1A
+    I2 --> T1A
+    T1A --> CL1
+    CL4 --> T2A
+    T2C --> J1
+    T2D --> J1
+    J1 --> S1
