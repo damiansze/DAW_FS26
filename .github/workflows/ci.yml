@@ -35,6 +35,8 @@ jobs:
     needs: lint          # Tests laufen nur, wenn Lint erfolgreich
     steps:
       - uses: actions/checkout@v4
+        with:
+          lfs: true
 
       - uses: actions/setup-python@v5
         with:
