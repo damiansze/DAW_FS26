@@ -1,6 +1,10 @@
 from __future__ import annotations
 
+import logging
+
 import pandas as pd
+
+logger = logging.getLogger("myproj.transform")
 
 
 def select_columns(df: pd.DataFrame, columns: list[str]) -> pd.DataFrame:
@@ -8,7 +12,13 @@ def select_columns(df: pd.DataFrame, columns: list[str]) -> pd.DataFrame:
     missing = [c for c in columns if c not in df.columns]
     if missing:
         raise ValueError(f"Spalten nicht vorhanden im DataFrame: {missing}")
-    return df[columns].copy()
+    result = df[columns].copy()
+    logger.info(
+        "select_columns | cols: %d → %d",
+        len(df.columns),
+        len(columns),
+    )
+    return result
 
 
 def filter_before_sea_level_start(
@@ -37,4 +47,11 @@ def filter_before_sea_level_start(
         | ((year == 1999) & (month == 1))
         | ((year == 1999) & (month == 2) & day.notna() & (day < 20))
     )
-    return df[~remove].copy()
+    result = df[~remove].copy()
+    logger.info(
+        "filter_before_sea_level_start | rows: %d → %d | removed: %d",
+        len(df),
+        len(result),
+        len(df) - len(result),
+    )
+    return result
