@@ -1,7 +1,7 @@
 # DAW_FS26 – Data Wrangling (+ Softwarekonstruktion)
 
 Dieses Repository ist die gemeinsame Basis für die Module **Data Wrangling (DAW)** und **Softwarekonstruktion (SKO)**.  
-Ziel ist eine reproduzierbare Datenpipeline (Import → Bereinigen → Transformieren → Verknüpfen) mit Clean Code, automatisierten Tests und CI/CD.
+Ziel ist eine reproduzierbare Datenpipeline mit Clean Code, automatisierten Tests und CI/CD.
 
 ---
 
@@ -14,151 +14,91 @@ Ziel ist eine reproduzierbare Datenpipeline (Import → Bereinigen → Transform
 - **LE4 Link:** Verknüpfung/Merge der Datenquellen zu einem finalen Datensatz
 
 ### SKO – Softwarekonstruktion
-- **Clean Code:** Einhaltung von PEP 8 und automatisches Linting (`ruff`)
-- **Automated Testing:** Unit Tests für Daten-Konsistenz und Transformationslogik (`pytest`)
-- **CI/CD:** GitHub Actions Pipeline prüft bei jedem Push/PR: Dependencies, Lint, Tests, Coverage
+- **Clean Code:** PEP 8, automatisches Linting (`ruff`)
+- **Testing:** Unit- und Integrationstests (`pytest`), Coverage ≥ 50 %
+- **CI/CD:** GitHub Actions prüft Lint + Tests bei jedem Push/PR
 - **Code Coverage:** Mindestabdeckung wird gemessen (`pytest-cov`)
 
 ### Datenquellen
-1. **EM-DAT Disaster Data**  
-   Excel-Datei mit Ereignisdaten zu Katastrophen (`public_emdat_1991_2024.xlsx`).  
-   Die Datei enthält Informationen zu Katastrophentypen, betroffenen Ländern, Zeitpunkten und weiteren ereignisbezogenen Merkmalen.
+| Datei | Format | Inhalt |
+|---|---|---|
+| `public_emdat_1991_2024.xlsx` | Excel | Katastrophenereignisse (EM-DAT), 1991–2024 |
+| `omi_climate_sl_medsea_area_averaged_anomalies_19990220_P20250729.nc` | NetCDF | Mittelmeer-Meeresspiegel-Anomalien, 1999–2024 |
 
-2. **Climate Anomaly Data**  
-   NetCDF-Datei mit klimabezogenen Anomaliedaten (`omi_climate_sl_medsea_area_averaged_anomalies_19990220_P20250729.nc`).  
-   Die Datei ist als xarray-Dataset strukturiert und enthält zeitbezogene Messwerte bzw. Anomalien, die später mit den Ereignisdaten in Beziehung gesetzt werden können.
+### Pipeline
+Die Datenpipeline ist in `src/myproj/pipeline.py` orchestriert und läuft vollständig im Arbeitsspeicher ohne Zwischenspeicherung:
 
-### Importlogik
-Der Datenimport wird über allgemeine Funktionen in `src/myproj/io/import_data.py` umgesetzt.  
-Die Rohdaten werden aus dem Ordner `data/raw/` geladen. Je nach Dateiendung werden unterschiedliche Reader verwendet:
+- **Import (`run_import`):** Rohdaten werden aus `data/raw/` geladen. `.xlsx` via `pandas`, `.nc` via `xarray (h5netcdf)`.
+- **Transform (`run_transform`):** Spaltenreduktion auf relevante Felder; EMDAT-Einträge eindeutig vor dem ersten Meeresspiegel-Messwert (1999-02-20) werden entfernt.
+- **Cleaning (`run_cleaning`):** Duplikate, logisch unmögliche Datumsangaben und Einträge ohne Startjahr werden entfernt; fehlende Sea-Level-Messwerte werden per linearer Interpolation imputiert.
 
-- `.xlsx`, `.xls` → `pandas.read_excel()`
-- `.nc` → `xarray.open_dataset(..., engine="h5netcdf")`
-
-Dadurch ist der Import flexibel und kann auch für weitere Rohdatenquellen wiederverwendet werden.
-
+Jede Stufe loggt strukturiert, welche Operationen ausgeführt wurden und wie viele Datenpunkte betroffen waren. In `docs` ist die Pipeline aufgezeichnet zu sehen.
 
 ### Aktueller Projektstand
-Aktuell liegt der Fokus auf **LE1 Import** und der technischen Projektstruktur.  
-Die Rohdaten werden aus `data/raw/` geladen und im Notebook explorativ untersucht.  
-Der Importcode ist im Paket `myproj.io` gekapselt, sodass dieselbe Logik später auch in der Pipeline wiederverwendet werden kann.
+Import, Transform und Cleaning sind implementiert und getestet. Die nächsten Schritte sind weitere Transformationen und Verknüpfung beider Datensätze.
 
 ### Linking-Strategie & finaler Datensatz
 _(TODO: Beschreibung der Verknüpfungslogik und vom finalen Outputs ergänzen)_
 
 ---
 
-## Quickstart
+## Für Nutzer (Auswertung / Abgabe)
 
-### 1. Repository klonen
+Voraussetzung: [uv](https://github.com/astral-sh/uv) installiert. Die Rohdaten sind via Git LFS im Repository enthalten und werden beim Klonen automatisch heruntergeladen.
+
+```bash
+git clone https://github.com/damiansze/DAW_FS26.git
+cd DAW_FS26
+uv sync --frozen
+uv run python -m myproj.pipeline
+```
+
+---
+
+## Für Mitentwickler
+
+### 1. Setup
+
+Repository klonen:
 ```bash
 git clone https://github.com/damiansze/DAW_FS26.git
 cd DAW_FS26
 ```
 
-### 2. Dependencies installieren (uv)
-Stelle sicher, dass [uv](https://github.com/astral-sh/uv) installiert ist:
-```bash
-curl -LsSf https://astral.sh/uv/install.sh | sh
-```
-
-Dann:
+Dependencies installieren (setzt [uv](https://github.com/astral-sh/uv) voraus):
 ```bash
 uv sync
 ```
-Das installiert die Projekt- und Dev-Abhängigkeiten aus `pyproject.toml` und `uv.lock` in ein venv.
 
-### 3. Pipeline ausführen
+Pre-commit Hooks einrichten (Ruff Lint + Format bei jedem `git commit`):
+```bash
+uv run pre-commit install
+```
+
+### 2. Pipeline ausführen
 ```bash
 uv run python -m myproj.pipeline
 ```
-**Output:** Erzeugt Dateien in `data/processed/` (z. B. `example.parquet`).
 
-### 4. Tests ausführen
+### 3. Tests ausführen
 ```bash
 uv run pytest
 ```
 
-### 5. Pre-commit Hooks einrichten
-```bash
-uv run pre-commit install
-```
-Damit wird bei jedem `git commit` automatisch **Ruff Lint + Format** geprüft.
-
-### 6. Linting manuell prüfen
+### 4. Linting manuell prüfen
 ```bash
 uv run ruff check .
 uv run ruff format --check .
 ```
 
-### 7. Code Coverage messen
+### 5. Code Coverage messen
 ```bash
 uv run pytest --cov=myproj --cov-report=term --cov-report=html
 ```
-**Output:** Zusammenfassung im Terminal + HTML-Report in `htmlcov/`.
+HTML-Report in `htmlcov/`.
 
----
+### 6. CI/CD (GitHub Actions)
 
-## Repository-Struktur
-
-```text
-.
-├─ .github/workflows/ci.yml      # CI Pipeline (Lint → Tests, getrennte Jobs)
-├─ .pre-commit-config.yaml       # Pre-commit Hooks (Ruff Lint + Format)
-├─ notebooks/                    # Jupyter Notebooks (Exploration/Dokumentation)
-│  ├─ 01_import.ipynb            # (geplant) Datenimport explorieren
-│  ├─ 02_clean.ipynb             # (geplant) Bereinigung dokumentieren
-│  ├─ 03_transform.ipynb         # (geplant) Transformationen testen
-│  └─ 04_link.ipynb              # (geplant) Verknüpfung visualisieren
-├─ src/
-│  └─ myproj/                    # Projektpaket (Produktionscode)
-│     ├─ __init__.py
-│     ├─ pipeline.py             # Orchestrierung (run_import, run_all)
-│     ├─ config.py               # Pfad-Konstanten
-│     ├─ io/                     # Reader/Writer (Datenimport/-export)
-│     ├─ cleaning/               # Bereinigung/Validierung
-│     ├─ transform/              # Feature Engineering/Transformationen
-│     └─ link/                   # Verknüpfen/Joins/Matching
-├─ tests/                        # pytest Unit Tests
-│  └─ test_pipeline.py
-├─ data/
-│  ├─ raw/                       # Rohdaten (unverändert, NICHT bearbeiten)
-│  └─ processed/                 # Erzeugte Ergebnisse (reproduzierbar)
-├─ pyproject.toml                # Projekt-Konfiguration (Dependencies, Tools)
-├─ uv.lock                       # Locked Dependencies (für Reproduzierbarkeit)
-└─ README.md                     # Diese Datei
-```
-
----
-
-## Reproduzierbarkeit
-
-### Datenmanagement-Policy
-- **`data/raw/`:** Original-Rohdaten, **niemals bearbeiten**. Bei Bedarf lokal hinzufügen.
-- **`data/processed/`:** Von der Pipeline erzeugte Outputs. Können jederzeit neu generiert werden.
-- **Git LFS / DVC:** Für grosse Datasets optional in Zukunft (Je nachdem welche Daten wir nutzen).
-
-### Exakte Schritte zur Reproduktion
-1. `git clone <REPO_URL> && cd DAW_FS26`
-2. `uv sync --frozen` (installiert exakte Versionen aus `uv.lock`)
-3. Rohdaten in `data/raw/` ablegen (falls lokal vorhanden)
-4. `uv run python -m myproj.pipeline` (Pipeline ausführen)
-5. Outputs in `data/processed/` prüfen
-
----
-
-## Notebooks vs. Produktionscode
-
-- **Notebooks (`notebooks/`):** Dokumentation, Exploration, ...
-- **Produktionscode (`src/myproj/`):** Wiederverwendbare, getestete Funktionen. Ist testbar, versionierbar und wird von der Pipeline verwendet.
-
-**Workflow:** Experimente zuerst im Notebook, dann stabile Logik nach `src/` extrahieren und testen.
-
----
-
-## CI/CD (GitHub Actions)
-
-### Was wird geprüft?
 Die Pipeline (`.github/workflows/ci.yml`) führt bei jedem **Push auf `main`** und **Pull Request gegen `main`** folgende Jobs aus:
 
 **Job 1 – Lint (Ruff)**
@@ -168,25 +108,17 @@ Die Pipeline (`.github/workflows/ci.yml`) führt bei jedem **Push auf `main`** u
 4. `ruff format --check .` → Formatting-Konsistenz
 
 **Job 2 – Tests (pytest)** *(läuft nur, wenn Lint erfolgreich)*
-1. Checkout Code
+1. Checkout Code (inkl. Git LFS)
 2. Install uv & Sync Dependencies (`uv sync --frozen`)
 3. `pytest --cov=src --cov-fail-under=50` → Tests + Coverage
 
-### Status prüfen
-- **GitHub:** `Actions`-Tab im Repository → grüner Haken = CI erfolgreich
-- **Pull Requests:** CI-Status wird automatisch angezeigt
+Status prüfen: `Actions`-Tab im Repository. **Regel:** Nur Code mit grüner CI darf in `main` gemerged werden.
 
-**Regel:** Nur Code mit grüner CI darf in `main` gemerged werden!
-
----
-
-## Team-Workflow
-
-### Branching-Strategie
+### 7. Branching-Strategie
 - **`main`-Branch:** Stabiler, produktiver Code (nur via PR)
 - **Feature Branches:** Für jede zu implementierende Lerneinheit.
 
-### Workflow
+Workflow:
 1. **Feature Branch erstellen:**
    ```bash
    git checkout -b feature/LE1-import
@@ -205,6 +137,53 @@ Die Pipeline (`.github/workflows/ci.yml`) führt bei jedem **Push auf `main`** u
 
 ---
 
+## Repository-Struktur
+
+```text
+.
+├── .github/workflows/ci.yml       # CI Pipeline (Lint → Tests, getrennte Jobs)
+├── .pre-commit-config.yaml        # Pre-commit Hooks (Ruff Lint + Format)
+├── notebooks/                     # Jupyter Notebooks (Exploration/Dokumentation)
+│   ├── 01_Import.ipynb
+│   ├── 02_Transform.ipynb
+│   └── 03_Cleaning.ipynb
+├── src/
+│   └── myproj/                    # Projektpaket (Produktionscode)
+│       ├── _utils.py              # Gemeinsame Hilfsfunktionen
+│       ├── pipeline.py            # Orchestrierung (run_import, run_transform, run_cleaning)
+│       ├── io/
+│       │   └── import_data.py     # Reader (Excel, NetCDF)
+│       ├── transform/
+│       │   └── trim_data.py       # Spaltenauswahl, Temporalfilter
+│       ├── cleaning/
+│       │   └── clean.py           # Duplikate, Datumsvalidierung, Imputation
+│       └── link/                  # (ausstehend)
+├── tests/
+│   ├── unit/
+│   │   ├── test_import_data.py
+│   │   ├── test_trim_data.py
+│   │   └── test_clean.py
+│   └── integration/
+│       └── test_pipeline.py
+├── data/
+│   ├── raw/                       # Rohdaten (unverändert, via Git LFS)
+│   └── processed/                 # Erzeugte Ergebnisse (reproduzierbar)
+├── pyproject.toml                 # Projekt-Konfiguration (Dependencies, Tools)
+├── uv.lock                        # Locked Dependencies (für Reproduzierbarkeit)
+└── README.md
+```
+
+---
+
+## Notebooks vs. Produktionscode
+
+- **Notebooks (`notebooks/`):** Dokumentation, Exploration, ...
+- **Produktionscode (`src/myproj/`):** Wiederverwendbare, getestete Funktionen. Ist testbar, versionierbar und wird von der Pipeline verwendet.
+
+**Workflow:** Experimente zuerst im Notebook, dann stabile Logik nach `src/` extrahieren und testen.
+
+---
+
 ## Tooling
 
 | Tool | Zweck |
@@ -219,3 +198,4 @@ Die Pipeline (`.github/workflows/ci.yml`) führt bei jedem **Push auf `main`** u
 | **pre-commit** | Git Hooks für automatisches Linting bei jedem Commit |
 | **GitHub Actions** | CI/CD Pipeline (Lint + Tests) |
 | **Git/GitHub** | Version Control und Kollaboration |
+| **Git LFS** | Versionierung grosser Datendateien (.xlsx, .nc) |
