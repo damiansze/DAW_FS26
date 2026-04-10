@@ -1,30 +1,48 @@
 flowchart TD
     %% ── IMPORT ──────────────────────────────────────────────
     subgraph IMP["1 · Import"]
-        I1["public_emdat_1991_2024.xlsx\n(Excel)"]
-        I2["omi_climate_sl_...nc\n(NetCDF)"]
+        I1["public_emdat_1991_2024.xlsx
+        (Excel)"]
+        I2["omi_climate_sl_...nc
+        (NetCDF)"]
     end
 
     %% ── TRANSFORM 1 ─────────────────────────────────────────
     subgraph T1["2 · Transform I"]
-        T1A["Irrelevante Spalten entfernen\nBeibehaltene Spalten:\n→ 15 EMDAT-Spalten inkl. DisNo.\n→ time + 2 Sea-Level-Werte"]
+        T1A["Irrelevante Spalten entfernen
+        Behalten werden:
+        - 18 EMDAT-Spalten inkl. DisNo.
+        - time + 2 Sea-Level-Werte"]
+        T1B["EMDAT: Einträge eindeutig vor
+        1999-02-20 entfernen"]
+        T1A --> T1B
     end
 
     %% ── CLEANING ─────────────────────────────────────────────
     subgraph CL["3 · Cleaning"]
-        CL1["Duplikate entfernen"]
-        CL2["NA behandeln"]
-        CL3["Outlier flaggen\n(IQR-Methode, Spalte is_outlier)"]
-        CL4["Logging\n– Anzahl entfernter Duplikate\n– Anzahl imputierter Werte\n– Anzahl geflaggter Outlier"]
-        CL1 --> CL2 --> CL3 --> CL4
+        CL1["Duplikate entfernen
+        (EMDAT: DisNo. / Sea Level: time)"]
+        CL2["EMDAT: Unmögliche Daten entfernen
+        (End Year < Start Year)"]
+        CL3["EMDAT: Einträge ohne Start Year entfernen"]
+        CL4["EMDAT: Outlier flaggen
+        (IQR-Methode → Spalte is_outlier)"]
+        CL5["Sea Level: Fehlende Messwerte
+        per linearer Interpolation imputieren"]
+        CL1 --> CL2 --> CL3 --> CL4 --> CL5
     end
 
     %% ── TRANSFORM 2 ─────────────────────────────────────────
     subgraph T2["4 · Transform II"]
-        T2A["Einheitliches Datum\nStart Year + Start Month\n→ period (YYYY-MM)"]
-        T2B["EMDAT filtern: Start Year ≥ 1999\n+ relevante Disaster Types"]
-        T2C["EMDAT aggregieren auf Monatsebene\n(Anzahl Ereignisse, Summe Deaths / Affected)"]
-        T2D["Sea Level auf Monatsebene aggregieren\n(Mittelwert je Monat)"]
+        T2A["Einheitliches Datum
+        Start Year + Start Month
+        → period (YYYY-MM)"]
+        T2B["EMDAT filtern:
+        relevante Disaster Types + Länder"]
+        T2C["(EMDAT aggregieren auf Monatsebene)
+        (Anzahl Ereignisse, Summe Deaths / Affected)"]
+        T2D["(Sea Level auf Monatsebene aggregieren)
+        (Mittelwert je Monat)"]
         T2A --> T2B --> T2C
         T2A --> T2D
     end
@@ -42,8 +60,8 @@ flowchart TD
     %% ── VERBINDUNGEN ─────────────────────────────────────────
     I1 --> T1A
     I2 --> T1A
-    T1A --> CL1
-    CL4 --> T2A
+    T1B --> CL1
+    CL5 --> T2A
     T2C --> J1
     T2D --> J1
     J1 --> S1
