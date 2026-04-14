@@ -183,11 +183,18 @@ def test_flag_outliers_adds_is_outlier_column():
     assert "is_outlier" in result.columns
 
 
+def test_flag_outliers_adds_per_column_flag():
+    df = _emdat_with_values([1.0, 2.0, 3.0, 4.0, 5.0])
+    result = flag_outliers(df, cols=["Total Deaths"])
+    assert "is_outlier_Total Deaths" in result.columns
+
+
 def test_flag_outliers_flags_extreme_high_value():
     # Values 1-5 with an extreme outlier at 10000
     df = _emdat_with_values([1.0, 2.0, 3.0, 4.0, 5.0, 10000.0])
     result = flag_outliers(df, cols=["Total Deaths"])
     assert result["is_outlier"].iloc[-1] is True or result["is_outlier"].iloc[-1] == True  # noqa: E712
+    assert result["is_outlier_Total Deaths"].iloc[-1] == True  # noqa: E712
     assert result["is_outlier"].iloc[0] == False  # noqa: E712
 
 
@@ -195,6 +202,7 @@ def test_flag_outliers_no_outliers_all_false():
     df = _emdat_with_values([10.0, 11.0, 12.0, 11.5, 10.5])
     result = flag_outliers(df, cols=["Total Deaths"])
     assert result["is_outlier"].sum() == 0
+    assert result["is_outlier_Total Deaths"].sum() == 0
 
 
 def test_flag_outliers_does_not_remove_rows():
@@ -207,6 +215,7 @@ def test_flag_outliers_nan_values_not_flagged():
     df = _emdat_with_values([1.0, None, 3.0])
     result = flag_outliers(df, cols=["Total Deaths"])
     assert result["is_outlier"].iloc[1] == False  # noqa: E712
+    assert result["is_outlier_Total Deaths"].iloc[1] == False  # noqa: E712
 
 
 def test_flag_outliers_returns_copy():
@@ -228,11 +237,17 @@ def test_flag_outliers_multiple_cols():
         }
     )
     result = flag_outliers(df, cols=["col_a", "col_b"])
-    # Row 7: outlier only in col_a
+    # Row 7: outlier only in col_a — per-column and combined flag set
+    assert result["is_outlier_col_a"].iloc[7] == True  # noqa: E712
+    assert result["is_outlier_col_b"].iloc[7] == False  # noqa: E712
     assert result["is_outlier"].iloc[7] == True  # noqa: E712
-    # Row 8: outlier only in col_b
+    # Row 8: outlier only in col_b — per-column and combined flag set
+    assert result["is_outlier_col_a"].iloc[8] == False  # noqa: E712
+    assert result["is_outlier_col_b"].iloc[8] == True  # noqa: E712
     assert result["is_outlier"].iloc[8] == True  # noqa: E712
-    # Normal rows not flagged
+    # Normal rows not flagged in any column
+    assert result["is_outlier_col_a"].iloc[0] == False  # noqa: E712
+    assert result["is_outlier_col_b"].iloc[0] == False  # noqa: E712
     assert result["is_outlier"].iloc[0] == False  # noqa: E712
 
 

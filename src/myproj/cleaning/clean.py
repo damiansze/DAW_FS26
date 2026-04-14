@@ -61,28 +61,32 @@ def flag_outliers(
     cols: list[str],
     id_col: str = "DisNo.",
 ) -> pd.DataFrame:
-    """Flaggt Zeilen als Outlier in einer neuen Spalte 'is_outlier' (IQR-Methode).
+    """Flaggt Zeilen als Outlier per Spalte und kombiniert (IQR-Methode).
 
-    Ein Eintrag gilt als Outlier, wenn mindestens eine der angegebenen Spalten
-    ausserhalb von [Q1 - 1.5*IQR, Q3 + 1.5*IQR] liegt. Fehlende Werte werden
-    nicht geflaggt. Die Zeilen werden nicht entfernt.
+    Pro Spalte in *cols* wird eine neue Spalte ``is_outlier_<col>`` angelegt.
+    Zusätzlich fasst ``is_outlier`` (OR über alle Spalten) zusammen, ob ein
+    Eintrag in mindestens einer Spalte ausserhalb von
+    [Q1 - 1.5*IQR, Q3 + 1.5*IQR] liegt.
     """
     df = df.copy()
-    outlier_mask = pd.Series(False, index=df.index)
+    combined_mask = pd.Series(False, index=df.index)
     for col in cols:
         values = pd.to_numeric(df[col], errors="coerce")
         q1 = values.quantile(0.25)
         q3 = values.quantile(0.75)
         iqr = q3 - q1
         col_mask = values.notna() & ((values < q1 - 1.5 * iqr) | (values > q3 + 1.5 * iqr))
-        outlier_mask |= col_mask
-    df["is_outlier"] = outlier_mask
-    n = int(outlier_mask.sum())
-    if n > 0:
-        ids = df.loc[outlier_mask, id_col].astype(str).tolist()
-        logger.info("flag_outliers | cols: %s | flagged: %d | ids: %s", cols, n, fmt_ids(ids))
-    else:
-        logger.info("flag_outliers | cols: %s | flagged: 0", cols)
+        df[f"is_outlier_{col}"] = col_mask
+        combined_mask |= col_mask
+        n_col = int(col_mask.sum())
+        if n_col > 0:
+            ids = df.loc[col_mask, id_col].astype(str).tolist()
+            logger.info("flag_outliers | col: %s | flagged: %d | ids: %s", col, n_col, fmt_ids(ids))
+        else:
+            logger.info("flag_outliers | col: %s | flagged: 0", col)
+    df["is_outlier"] = combined_mask
+    n_total = int(combined_mask.sum())
+    logger.info("flag_outliers | cols: %s | total flagged: %d", cols, n_total)
     return df
 
 
