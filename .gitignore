@@ -215,3 +215,6 @@ data/processed/*
 
 # Jupyter notebook checkpoints
 .ipynb_checkpoints.vscode/
+
+# Other
+Modulbeschreibung.md

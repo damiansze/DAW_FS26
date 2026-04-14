@@ -1,7 +1,12 @@
+from __future__ import annotations
+
+import logging
 from pathlib import Path
 
 import pandas as pd
 import xarray as xr
+
+logger = logging.getLogger("myproj.io")
 
 
 def find_project_root() -> Path:
@@ -37,7 +42,7 @@ def get_raw_file_path(filename: str) -> Path:
     return file_path
 
 
-def load_raw_data(filename: str, encoding: str = "utf-8"):
+def load_raw_data(filename: str):
     """
     Lädt eine Datei aus data/raw abhängig von ihrer Dateiendung.
 
@@ -48,11 +53,25 @@ def load_raw_data(filename: str, encoding: str = "utf-8"):
     file_path = get_raw_file_path(filename)
     suffix = file_path.suffix.lower()
 
-    if suffix in [".xlsx", ".xls"]:
-        return pd.read_excel(file_path)
+    if suffix in {".xlsx", ".xls"}:
+        df = pd.read_excel(file_path)
+        logger.info(
+            "load_raw_data | file: %s | rows: %d | cols: %d",
+            filename,
+            len(df),
+            len(df.columns),
+        )
+        return df
 
     if suffix == ".nc":
-        return xr.open_dataset(file_path, engine="h5netcdf")
+        ds = xr.open_dataset(file_path, engine="h5netcdf")
+        logger.info(
+            "load_raw_data | file: %s | variables: %d | dimensions: %s",
+            filename,
+            len(ds.data_vars),
+            dict(ds.sizes),
+        )
+        return ds
 
     raise ValueError(
         f"Nicht unterstütztes Dateiformat: {suffix}. Unterstützt werden .xlsx, .xls, .nc"

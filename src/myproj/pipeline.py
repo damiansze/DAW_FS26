@@ -1,9 +1,27 @@
 from __future__ import annotations
 
+import logging
+
 import pandas as pd
 
+from myproj.cleaning.clean import (
+    drop_duplicates,
+    drop_impossible_dates,
+    drop_missing_start_year,
+    flag_outliers,
+    impute_missing_measurements,
+)
 from myproj.io.import_data import load_raw_data
 from myproj.transform.trim_data import filter_before_sea_level_start, select_columns
+
+# ── Logging ───────────────────────────────────────────────────────────────────
+
+logging.basicConfig(
+    level=logging.INFO,
+    format="%(asctime)s | %(name)-20s | %(levelname)-8s | %(message)s",
+    datefmt="%Y-%m-%d %H:%M:%S",
+)
+logger = logging.getLogger("myproj.pipeline")
 
 # ── Dateinamen ────────────────────────────────────────────────────────────────
 
@@ -43,10 +61,12 @@ SEA_LEVEL_KEEP_COLS = [
 
 
 def run_import() -> tuple[pd.DataFrame, pd.DataFrame]:
+    logger.info("run_import | start")
     emdat_raw = load_raw_data(EMDAT_FILE)
     climate_raw = load_raw_data(SEA_LEVEL_FILE)
     sea_level_raw = climate_raw.to_dataframe().reset_index()
     climate_raw.close()
+    logger.info("run_import | done")
     return emdat_raw, sea_level_raw
 
 
@@ -54,16 +74,34 @@ def run_transform(
     emdat_raw: pd.DataFrame,
     sea_level_raw: pd.DataFrame,
 ) -> tuple[pd.DataFrame, pd.DataFrame]:
+    logger.info("run_transform | start")
     emdat = select_columns(emdat_raw, EMDAT_KEEP_COLS)
     emdat = filter_before_sea_level_start(emdat)
     sea_level = select_columns(sea_level_raw, SEA_LEVEL_KEEP_COLS)
+    logger.info("run_transform | done")
+    return emdat, sea_level
+
+
+def run_cleaning(
+    emdat: pd.DataFrame,
+    sea_level: pd.DataFrame,
+) -> tuple[pd.DataFrame, pd.DataFrame]:
+    logger.info("run_cleaning | start")
+    emdat = drop_duplicates(emdat, id_col="DisNo.")
+    emdat = drop_impossible_dates(emdat)
+    emdat = drop_missing_start_year(emdat)
+    emdat = flag_outliers(emdat, cols=["Total Affected", "Total Deaths"])
+    sea_level = drop_duplicates(sea_level, id_col="time")
+    sea_level = impute_missing_measurements(sea_level)
+    logger.info("run_cleaning | done")
     return emdat, sea_level
 
 
 def main() -> None:
     emdat_raw, sea_level_raw = run_import()
     emdat, sea_level = run_transform(emdat_raw, sea_level_raw)
-    # run_cleaning(), run_prepare(), run_join(), run_save() folgen
+    emdat, sea_level = run_cleaning(emdat, sea_level)
+    # run_prepare(), run_join(), run_save() folgen
 
 
 if __name__ == "__main__":
