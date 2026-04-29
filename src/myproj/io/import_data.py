@@ -15,11 +15,14 @@ def find_project_root() -> Path:
     nach oben gesucht wird, bis eine pyproject.toml gefunden wird.
     """
     current = Path.cwd().resolve()
+    logger.debug("Suche Projektroot ab: %s", current)
 
     for path in [current, *current.parents]:
         if (path / "pyproject.toml").exists():
+            logger.debug("Projektroot gefunden: %s", path)
             return path
 
+    logger.error("Projektroot nicht gefunden ab: %s", current)
     raise FileNotFoundError(
         "Projektroot nicht gefunden. Stelle sicher, dass du im Projekt "
         "oder in einem Unterordner des Projekts arbeitest."
@@ -37,8 +40,10 @@ def get_raw_file_path(filename: str) -> Path:
     file_path = DATA_RAW / filename
 
     if not file_path.exists():
+        logger.error("Rohdatei nicht gefunden: %s", file_path)
         raise FileNotFoundError(f"Datei nicht gefunden: {file_path}")
 
+    logger.debug("Rohdatei gefunden: %s", file_path)
     return file_path
 
 
@@ -52,6 +57,7 @@ def load_raw_data(filename: str):
     """
     file_path = get_raw_file_path(filename)
     suffix = file_path.suffix.lower()
+    logger.info("Lade Rohdatei: %s", file_path.name)
 
     if suffix in {".xlsx", ".xls"}:
         df = pd.read_excel(file_path)
