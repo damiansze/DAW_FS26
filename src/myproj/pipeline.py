@@ -60,6 +60,10 @@ SEA_LEVEL_KEEP_COLS = [
 # ── Pipeline-Schritte ─────────────────────────────────────────────────────────
 
 
+def configure_logging(level: int = logging.INFO) -> None:
+    logging.basicConfig(level=level, format=format, force=True)
+
+
 def run_import() -> tuple[pd.DataFrame, pd.DataFrame]:
     logger.info("run_import | start")
     emdat_raw = load_raw_data(EMDAT_FILE)
@@ -98,6 +102,8 @@ def run_cleaning(
 
 
 def main() -> None:
+    configure_logging()
+    logger.info("Pipeline gestartet")
     emdat_raw, sea_level_raw = run_import()
     emdat, sea_level = run_transform(emdat_raw, sea_level_raw)
     emdat, sea_level = run_cleaning(emdat, sea_level)

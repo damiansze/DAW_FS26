@@ -11,6 +11,7 @@ def select_columns(df: pd.DataFrame, columns: list[str]) -> pd.DataFrame:
     """Nur angegebene Spalten behalten. Raises ValueError bei fehlenden Spalten."""
     missing = [c for c in columns if c not in df.columns]
     if missing:
+        logger.error("Spaltenauswahl fehlgeschlagen; fehlende Spalten: %s", missing)
         raise ValueError(f"Spalten nicht vorhanden im DataFrame: {missing}")
     result = df[columns].copy()
     logger.info(

@@ -77,7 +77,7 @@ uv run pre-commit install
 
 ### 2. Pipeline ausführen
 ```bash
-uv run python -m myproj.pipeline
+PYTHONPATH=src uv run python -m myproj.pipeline
 ```
 
 ### 3. Tests ausführen
