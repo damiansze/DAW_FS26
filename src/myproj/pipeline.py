@@ -61,7 +61,7 @@ SEA_LEVEL_KEEP_COLS = [
 
 
 def configure_logging(level: int = logging.INFO) -> None:
-    logging.basicConfig(level=level, format=LOG_FORMAT, force=True)
+    logging.basicConfig(level=level, format=format, force=True)
 
 
 def run_import() -> tuple[pd.DataFrame, pd.DataFrame]:
