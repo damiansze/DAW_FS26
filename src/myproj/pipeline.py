@@ -12,7 +12,7 @@ from myproj.cleaning.clean import (
     impute_missing_measurements,
 )
 from myproj.io.import_data import load_raw_data
-from myproj.transform.trim_data import filter_before_sea_level_start, select_columns
+from myproj.transform.trim_data import filter_to_sea_level_coverage, select_columns
 
 # ── Logging ───────────────────────────────────────────────────────────────────
 
@@ -80,7 +80,7 @@ def run_transform(
 ) -> tuple[pd.DataFrame, pd.DataFrame]:
     logger.info("run_transform | start")
     emdat = select_columns(emdat_raw, EMDAT_KEEP_COLS)
-    emdat = filter_before_sea_level_start(emdat)
+    emdat = filter_to_sea_level_coverage(emdat, sea_level_raw)
     sea_level = select_columns(sea_level_raw, SEA_LEVEL_KEEP_COLS)
     logger.info("run_transform | done")
     return emdat, sea_level

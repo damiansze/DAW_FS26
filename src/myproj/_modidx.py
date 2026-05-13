@@ -9,7 +9,24 @@ d = {
         "lib_path": "src/myproj",
     },
     "syms": {
-        "myproj.cleaning.clean": {},
+        "myproj.cleaning.clean": {
+            "myproj.cleaning.clean.drop_duplicates": (
+                "cleaning.html#drop_duplicates",
+                "myproj/cleaning/clean.py",
+            ),
+            "myproj.cleaning.clean.drop_impossible_dates": (
+                "cleaning.html#drop_impossible_dates",
+                "myproj/cleaning/clean.py",
+            ),
+            "myproj.cleaning.clean.drop_missing_start_year": (
+                "cleaning.html#drop_missing_start_year",
+                "myproj/cleaning/clean.py",
+            ),
+            "myproj.cleaning.clean.impute_missing_measurements": (
+                "cleaning.html#impute_missing_measurements",
+                "myproj/cleaning/clean.py",
+            ),
+        },
         "myproj.io.import_data": {
             "myproj.io.import_data.find_project_root": (
                 "import.html#find_project_root",
