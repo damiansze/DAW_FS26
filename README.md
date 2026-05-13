@@ -31,14 +31,51 @@ Die Datenpipeline ist in `src/myproj/pipeline.py` orchestriert und läuft vollst
 - **Import (`run_import`):** Rohdaten werden aus `data/raw/` geladen. `.xlsx` via `pandas`, `.nc` via `xarray (h5netcdf)`.
 - **Transform (`run_transform`):** Spaltenreduktion auf relevante Felder; EMDAT-Einträge eindeutig vor dem ersten Meeresspiegel-Messwert (1999-02-20) werden entfernt.
 - **Cleaning (`run_cleaning`):** Duplikate, logisch unmögliche Datumsangaben und Einträge ohne Startjahr werden entfernt; fehlende Sea-Level-Messwerte werden per linearer Interpolation imputiert.
+- **Explorativer Transform & Join (`04_Transform_Join.ipynb`):** Flood-Ereignisse werden auf den Mittelmeerraum gefiltert, mit Datums- und Saisonspalten erweitert und mit täglichen Sea-Level-Werten verknüpft. Dieser Schritt ist aktuell noch Notebook-Code und noch nicht Teil der produktiven Pipeline.
+
 
 Jede Stufe loggt strukturiert, welche Operationen ausgeführt wurden und wie viele Datenpunkte betroffen waren. In `docs` ist die Pipeline aufgezeichnet zu sehen.
 
 ### Aktueller Projektstand
-Import, Transform und Cleaning sind implementiert und getestet. Die nächsten Schritte sind weitere Transformationen und Verknüpfung beider Datensätze.
+Import, erste Transformation und Cleaning sind als Produktionscode in `src/myproj/` implementiert und getestet.
+
+Zusätzlich wurde mit `notebooks/04_Transform_Join.ipynb` ein explorativer Schritt für weitere Transformationen und den Join der EMDAT- und Sea-Level-Daten erstellt. Das Notebook filtert die bereinigten EMDAT-Daten auf Flood-Ereignisse im Mittelmeerraum, konstruiert Ereignisdatumswerte, ergänzt abgeleitete Spalten und verknüpft die Ereignisse mit täglichen Sea-Level-Werten.
+
+Die Join-Logik ist aktuell noch im Notebook umgesetzt und noch nicht vollständig als Produktionscode in `src/myproj/link/` ausgelagert.
+
 
 ### Linking-Strategie & finaler Datensatz
-_(TODO: Beschreibung der Verknüpfungslogik und vom finalen Outputs ergänzen)_
+
+Die Linking-Strategie wird in `notebooks/04_Transform_Join.ipynb` entwickelt. Ausgangspunkt sind die bereits importierten, transformierten und bereinigten Daten aus der Pipeline.
+
+Der Ablauf im Notebook:
+
+1. **Flood-Filter:** Aus den bereinigten EMDAT-Daten werden nur Ereignisse behalten, bei denen `Disaster Type` oder `Disaster Subtype` auf Flood hinweist.
+2. **Geographischer Filter:** Die Flood-Ereignisse werden auf Mittelmeer-Länder eingeschränkt, da der Sea-Level-Datensatz den Mittelmeerraum beschreibt.
+3. **Datumsaufbereitung:** Aus `Start Year`, `Start Month`, `Start Day` sowie den End-Datumsspalten werden `start_date` und `end_date` erzeugt. Fehlende Monate oder Tage werden mit `1` ersetzt und über `start_date_quality` bzw. `end_date_quality` dokumentiert.
+4. **Sea-Level-Coverage:** Es werden nur Ereignisse behalten, deren `start_date` innerhalb der Sea-Level-Zeitreihe liegt.
+5. **Abgeleitete Spalten:** Ergänzt werden `season`, `event_duration_days` und `has_coordinates`.
+6. **Join:** Die Flood-Ereignisse werden per Datum mit der Sea-Level-Zeitreihe verbunden.
+7. **Skalierung:** Sea-Level-Werte werden zusätzlich als Z-Scores relativ zur gesamten Sea-Level-Zeitreihe berechnet.
+
+Der finale explorative Datensatz heisst `flood_linked`. Er enthält pro Flood-Ereignis unter anderem:
+
+- `start_date`, `end_date`
+- `start_date_quality`, `end_date_quality`
+- `season`
+- `event_duration_days`
+- `has_coordinates`
+- `sea_level_at_start`
+- `sea_trend_at_start`
+- `sea_level_at_end`
+- `mean_sea_level_while_disaster`
+- `sea_level_lag_1d` bis `sea_level_lag_5d`
+- `sea_level_at_start_z`
+- `mean_sea_level_while_disaster_z`
+
+Im aktuellen Notebook-Ergebnis enthält `flood_linked` **292 Flood-Ereignisse** und **31 Spalten**. Für `sea_level_at_start` fehlen keine Werte. Die Sea-Level-Zeitreihe deckt den Zeitraum **1999-02-20 bis 2024-11-19** ab.
+
+Die Join-Logik ist aktuell noch explorativ. Als nächster Schritt sollten die stabilen Funktionen nach `src/myproj/link/` oder `src/myproj/transform/` überführt und mit Unit-Tests abgesichert werden.
 
 ---
 
@@ -146,7 +183,8 @@ Workflow:
 ├── notebooks/                     # Jupyter Notebooks (Exploration/Dokumentation)
 │   ├── 01_Import.ipynb
 │   ├── 02_Transform.ipynb
-│   └── 03_Cleaning.ipynb
+│   ├── 03_Cleaning.ipynb
+│   └── 04_Transform_Join.ipynb    # Weitere Transformationen und Join
 ├── src/
 │   └── myproj/                    # Projektpaket (Produktionscode)
 │       ├── _utils.py              # Gemeinsame Hilfsfunktionen
@@ -181,6 +219,8 @@ Workflow:
 - **Produktionscode (`src/myproj/`):** Wiederverwendbare, getestete Funktionen. Ist testbar, versionierbar und wird von der Pipeline verwendet.
 
 **Workflow:** Experimente zuerst im Notebook, dann stabile Logik nach `src/` extrahieren und testen.
+
+Beispiel: Die Join-Logik wird aktuell in `notebooks/04_Transform_Join.ipynb` entwickelt. Dort entsteht der explorative Datensatz `flood_linked`. Sobald die Logik stabil ist, sollen die Funktionen für Flood-Filter, Mittelmeer-Filter, Datumsaufbereitung, Sea-Level-Join und Skalierung in `src/myproj/link/` oder `src/myproj/transform/` übernommen und getestet werden.
 
 ---
 
