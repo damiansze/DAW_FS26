@@ -7,61 +7,72 @@ flowchart TD
         (NetCDF)"]
     end
 
-    %% ── TRANSFORM 1 ─────────────────────────────────────────
-    subgraph T1["2 · Transform I"]
-        T1A["Irrelevante Spalten entfernen
-        Behalten werden:
-        - 18 EMDAT-Spalten inkl. DisNo.
-        - time + 2 Sea-Level-Werte"]
-        T1B["EMDAT: Einträge eindeutig vor
-        1999-02-20 entfernen"]
-        T1A --> T1B
+    %% ── PRE-FILTER ──────────────────────────────────────────
+    subgraph PF["2 · Pre-Filter"]
+        PF1["Irrelevante Spalten entfernen
+        (18 EMDAT-Spalten / 3 Sea-Level-Spalten)"]
+        PF2["EMDAT: Einträge ausserhalb
+        Sea-Level-Abdeckung entfernen"]
+        PF1 --> PF2
     end
 
-    %% ── CLEANING ─────────────────────────────────────────────
+    %% ── CLEANING ────────────────────────────────────────────
     subgraph CL["3 · Cleaning"]
         CL1["Duplikate entfernen
         (EMDAT: DisNo. / Sea Level: time)"]
         CL2["EMDAT: Unmögliche Daten entfernen
         (End Year < Start Year)"]
         CL3["EMDAT: Einträge ohne Start Year entfernen"]
-        CL4["EMDAT: Outlier flaggen
-        (IQR-Methode → Spalte is_outlier)"]
-        CL5["Sea Level: Fehlende Messwerte
+        CL4["Sea Level: Fehlende Messwerte
         per linearer Interpolation imputieren"]
-        CL1 --> CL2 --> CL3 --> CL4 --> CL5
+        CL1 --> CL2 --> CL3
+        CL1 --> CL4
     end
 
-    %% ── TRANSFORM 2 ─────────────────────────────────────────
-    subgraph T2["4 · Transform II"]
-        T2A["Einheitliches Datum
-        Start Year + Start Month
-        → period (YYYY-MM)"]
-        T2B["EMDAT filtern:
-        relevante Disaster Types + Länder"]
-        T2C["(EMDAT aggregieren auf Monatsebene)
-        (Anzahl Ereignisse, Summe Deaths / Affected)"]
-        T2D["(Sea Level auf Monatsebene aggregieren)
-        (Mittelwert je Monat)"]
-        T2A --> T2B --> T2C
-        T2A --> T2D
+    %% ── POST-FILTER ─────────────────────────────────────────
+    subgraph POSTF["4 · Post-Filter"]
+        F1["Nur Flood-Ereignisse behalten
+        (Disaster Type / Disaster Subtype)"]
+        F2["Nur Mittelmeerländer behalten
+        (ISO-Ländercodes)"]
+        F1 --> F2
     end
 
-    %% ── JOIN ─────────────────────────────────────────────────
-    subgraph JN["5 · Verknüpfung"]
-        J1["Left Join\nEMDAT (monatlich) ← Sea Level (monatlich)\nKey: period (YYYY-MM)"]
+    %% ── TRANSFORM ───────────────────────────────────────────
+    subgraph TR["5 · Transform"]
+        TR1["Datum konstruieren
+        (start_date, end_date aus Year/Month/Day)
+        + Datenqualität dokumentieren"]
+        TR2["Abgeleitete Spalten hinzufügen
+        (season, event_duration_days, has_coordinates)"]
+        TR1 --> TR2
     end
 
-    %% ── SPEICHERN ────────────────────────────────────────────
-    subgraph SV["6 · Speichern"]
-        S1["data/processed/final.parquet"]
+    %% ── JOIN & ANREICHERUNG ─────────────────────────────────
+    subgraph JN["6 · Join & Anreicherung"]
+        J1["Sea-Level Join (tagesgenau)
+        sea_level_at_start, sea_trend_at_start
+        sea_level_at_end, mean_sea_level_while_disaster"]
+        J2["Sea-Level Lags hinzufügen
+        (sea_level_lag_1d … sea_level_lag_5d)"]
+        J3["Z-Scores berechnen
+        (sea_level_at_start_z,
+        mean_sea_level_while_disaster_z)"]
+        J4["Redundante Spalten entfernen"]
+        J1 --> J2 --> J3 --> J4
+    end
+
+    %% ── EXPORT ──────────────────────────────────────────────
+    subgraph EX["7 · Export"]
+        E1["data/processed/flood_linked.parquet"]
     end
 
     %% ── VERBINDUNGEN ─────────────────────────────────────────
-    I1 --> T1A
-    I2 --> T1A
-    T1B --> CL1
-    CL5 --> T2A
-    T2C --> J1
-    T2D --> J1
-    J1 --> S1
+    I1 --> PF1
+    I2 --> PF1
+    PF2 --> CL1
+    CL3 --> F1
+    CL4 --> J1
+    F2 --> TR1
+    TR2 --> J1
+    J4 --> E1
