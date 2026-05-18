@@ -51,7 +51,7 @@ Der Produktionscode in `src/myproj/` wird **aus den Notebooks generiert**, nicht
 notebooks/01_Import.ipynb          →  src/myproj/io/import_data.py
 notebooks/02_Filter.ipynb          →  src/myproj/transform/filter.py
 notebooks/03_Cleaning.ipynb        →  src/myproj/cleaning/clean.py
-notebooks/04_Transform_Join.ipynb  →  src/myproj/transform/transform.py
+notebooks/04_Transform.ipynb  →  src/myproj/transform/transform.py
 notebooks/05_Join.ipynb            →  src/myproj/link/join.py
 notebooks/06_Export.ipynb          →  src/myproj/io/export_data.py
 ```
@@ -120,7 +120,7 @@ uv run ruff format --check .                           # Format-Prüfung
 │   ├── 01_Import.ipynb
 │   ├── 02_Filter.ipynb
 │   ├── 03_Cleaning.ipynb
-│   ├── 04_Transform_Join.ipynb
+│   ├── 04_Transform.ipynb
 │   ├── 05_Join.ipynb
 │   └── 06_Export.ipynb
 ├── src/
