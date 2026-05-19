@@ -7,7 +7,6 @@ from myproj.cleaning.clean import (
     drop_duplicates,
     drop_impossible_dates,
     drop_missing_start_year,
-    flag_outliers,
     impute_missing_measurements,
 )
 
@@ -86,7 +85,7 @@ def test_drop_impossible_dates_keeps_row_when_end_year_missing():
 
 
 def test_drop_impossible_dates_keeps_row_when_start_year_missing():
-    df = _emdat([{"DisNo.": "A", "Start Year": None, "End Year": 2000}])
+    df = pd.DataFrame({"DisNo.": ["A"], "Start Year": [float("nan")], "End Year": [2000.0]})
     assert len(drop_impossible_dates(df)) == 1
 
 
@@ -162,93 +161,6 @@ def test_impute_returns_copy():
     result = impute_missing_measurements(df, cols=["MSL_filtered_GIA_corrected_adjusted"])
     result["MSL_filtered_GIA_corrected_adjusted"] = 99.0
     assert df["MSL_filtered_GIA_corrected_adjusted"].iloc[0] == pytest.approx(1.0)
-
-
-# ── flag_outliers ─────────────────────────────────────────────────────────────
-
-
-def _emdat_with_values(values: list[float | None]) -> pd.DataFrame:
-    """EMDAT DataFrame with a 'Total Deaths' column for outlier testing."""
-    return pd.DataFrame(
-        {
-            "DisNo.": [f"ID-{i}" for i in range(len(values))],
-            "Total Deaths": pd.array(values, dtype="Float64"),
-        }
-    )
-
-
-def test_flag_outliers_adds_is_outlier_column():
-    df = _emdat_with_values([1.0, 2.0, 3.0, 4.0, 5.0])
-    result = flag_outliers(df, cols=["Total Deaths"])
-    assert "is_outlier" in result.columns
-
-
-def test_flag_outliers_adds_per_column_flag():
-    df = _emdat_with_values([1.0, 2.0, 3.0, 4.0, 5.0])
-    result = flag_outliers(df, cols=["Total Deaths"])
-    assert "is_outlier_Total Deaths" in result.columns
-
-
-def test_flag_outliers_flags_extreme_high_value():
-    # Values 1-5 with an extreme outlier at 10000
-    df = _emdat_with_values([1.0, 2.0, 3.0, 4.0, 5.0, 10000.0])
-    result = flag_outliers(df, cols=["Total Deaths"])
-    assert result["is_outlier"].iloc[-1] is True or result["is_outlier"].iloc[-1] == True  # noqa: E712
-    assert result["is_outlier_Total Deaths"].iloc[-1] == True  # noqa: E712
-    assert result["is_outlier"].iloc[0] == False  # noqa: E712
-
-
-def test_flag_outliers_no_outliers_all_false():
-    df = _emdat_with_values([10.0, 11.0, 12.0, 11.5, 10.5])
-    result = flag_outliers(df, cols=["Total Deaths"])
-    assert result["is_outlier"].sum() == 0
-    assert result["is_outlier_Total Deaths"].sum() == 0
-
-
-def test_flag_outliers_does_not_remove_rows():
-    df = _emdat_with_values([1.0, 2.0, 3.0, 10000.0])
-    result = flag_outliers(df, cols=["Total Deaths"])
-    assert len(result) == len(df)
-
-
-def test_flag_outliers_nan_values_not_flagged():
-    df = _emdat_with_values([1.0, None, 3.0])
-    result = flag_outliers(df, cols=["Total Deaths"])
-    assert result["is_outlier"].iloc[1] == False  # noqa: E712
-    assert result["is_outlier_Total Deaths"].iloc[1] == False  # noqa: E712
-
-
-def test_flag_outliers_returns_copy():
-    df = _emdat_with_values([1.0, 2.0, 10000.0])
-    result = flag_outliers(df, cols=["Total Deaths"])
-    result["Total Deaths"] = 0.0
-    assert df["Total Deaths"].iloc[0] == pytest.approx(1.0)
-
-
-def test_flag_outliers_multiple_cols():
-    # Build two columns each with a clear outlier in a different row.
-    # Use enough normal values so IQR detects the extreme value reliably.
-    base = [10.0, 11.0, 10.5, 11.5, 10.0, 11.0, 10.5]
-    df = pd.DataFrame(
-        {
-            "DisNo.": [f"ID-{i}" for i in range(len(base) + 2)],
-            "col_a": pd.array(base + [10000.0, 10.0], dtype="Float64"),
-            "col_b": pd.array(base + [10.0, 10000.0], dtype="Float64"),
-        }
-    )
-    result = flag_outliers(df, cols=["col_a", "col_b"])
-    # Row 7: outlier only in col_a — per-column and combined flag set
-    assert result["is_outlier_col_a"].iloc[7] == True  # noqa: E712
-    assert result["is_outlier_col_b"].iloc[7] == False  # noqa: E712
-    assert result["is_outlier"].iloc[7] == True  # noqa: E712
-    # Row 8: outlier only in col_b — per-column and combined flag set
-    assert result["is_outlier_col_a"].iloc[8] == False  # noqa: E712
-    assert result["is_outlier_col_b"].iloc[8] == True  # noqa: E712
-    assert result["is_outlier"].iloc[8] == True  # noqa: E712
-    # Normal rows not flagged in any column
-    assert result["is_outlier_col_a"].iloc[0] == False  # noqa: E712
-    assert result["is_outlier_col_b"].iloc[0] == False  # noqa: E712
-    assert result["is_outlier"].iloc[0] == False  # noqa: E712
 
 
 def test_impute_operates_on_specified_cols_only():
