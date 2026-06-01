@@ -10,15 +10,7 @@ import pandas as pd
 logger = logging.getLogger("myproj.transform")
 
 # %% auto #0
-__all__ = [
-    "logger",
-    "MED_ISO",
-    "select_columns",
-    "filter_to_sea_level_coverage",
-    "filter_to_floods",
-    "filter_to_mediterranean",
-]
-
+__all__ = ['logger', 'MED_ISO', 'select_columns', 'filter_to_sea_level_coverage', 'filter_to_floods', 'filter_to_mediterranean']
 
 # %% ../../../notebooks/02_Filter.ipynb #c18045af
 def select_columns(df: pd.DataFrame, columns: list[str]) -> pd.DataFrame:
@@ -34,7 +26,6 @@ def select_columns(df: pd.DataFrame, columns: list[str]) -> pd.DataFrame:
         len(columns),
     )
     return result
-
 
 # %% ../../../notebooks/02_Filter.ipynb #e90d11e3
 def filter_to_sea_level_coverage(
@@ -53,91 +44,52 @@ def filter_to_sea_level_coverage(
     s = pd.to_datetime(sea_level[time_col].min())
     e = pd.to_datetime(sea_level[time_col].max())
 
-    date_lower = pd.to_datetime(
-        pd.DataFrame(
-            {
-                "year": df[year_col],
-                "month": df[month_col].fillna(1),
-                "day": df[day_col].fillna(1),
-            }
-        ),
-        errors="coerce",
-    )
-    date_upper = pd.to_datetime(
-        pd.DataFrame(
-            {
-                "year": df[year_col],
-                "month": df[month_col].fillna(12),
-                "day": df[day_col].fillna(28),
-            }
-        ),
-        errors="coerce",
-    )
+    date_lower = pd.to_datetime(pd.DataFrame({
+        "year": df[year_col], "month": df[month_col].fillna(1), "day": df[day_col].fillna(1),
+    }), errors="coerce")
+    date_upper = pd.to_datetime(pd.DataFrame({
+        "year": df[year_col], "month": df[month_col].fillna(12), "day": df[day_col].fillna(28),
+    }), errors="coerce")
 
     mask = (date_lower >= s) & (date_upper <= e)
     result = df[mask].copy()
     logger.info(
         "filter_to_sea_level_coverage | rows: %d → %d | removed before: %d | removed after: %d | coverage: %s – %s",
-        len(df),
-        len(result),
+        len(df), len(result),
         int((date_lower < s).sum()),
         int((date_upper > e).sum()),
-        s.date(),
-        e.date(),
+        s.date(), e.date(),
     )
     return result
-
 
 # %% ../../../notebooks/02_Filter.ipynb #e95c017e
 def filter_to_floods(df: pd.DataFrame) -> pd.DataFrame:
     """Behält nur Zeilen, bei denen Disaster Type oder Disaster Subtype 'flood' enthält."""
-    mask = df["Disaster Type"].str.contains("flood", case=False, na=False) | df[
-        "Disaster Subtype"
-    ].str.contains("flood", case=False, na=False)
+    mask = (
+        df["Disaster Type"].str.contains("flood", case=False, na=False)
+        | df["Disaster Subtype"].str.contains("flood", case=False, na=False)
+    )
     result = df[mask].copy()
     logger.info(
         "filter_to_floods | rows: %d → %d | removed: %d",
-        len(df),
-        len(result),
-        len(df) - len(result),
+        len(df), len(result), len(df) - len(result),
     )
     return result
 
-
 # %% ../../../notebooks/02_Filter.ipynb #3fe5207d
 MED_ISO = [
-    "ALB",
-    "DZA",
-    "BIH",
-    "HRV",
-    "CYP",
-    "EGY",
-    "FRA",
-    "GRC",
-    "ISR",
-    "ITA",
-    "LBN",
-    "LBY",
-    "MLT",
-    "MNE",
-    "MAR",
-    "PSE",
-    "SVN",
-    "ESP",
-    "SYR",
-    "TUN",
-    "TUR",
+    "ALB", "DZA", "BIH", "HRV", "CYP", "EGY", "FRA", "GRC", "ISR", "ITA",
+    "LBN", "LBY", "MLT", "MNE", "MAR", "PSE", "SVN", "ESP", "SYR", "TUN", "TUR",
 ]
 
-
 # %% ../../../notebooks/02_Filter.ipynb #ef105138
-def filter_to_mediterranean(df: pd.DataFrame, iso_codes: list[str] = MED_ISO) -> pd.DataFrame:
+def filter_to_mediterranean(
+    df: pd.DataFrame, iso_codes: list[str] = MED_ISO
+) -> pd.DataFrame:
     """Behält nur Zeilen aus Mittelmeerländern gemäss ISO-Ländercodes."""
     result = df[df["ISO"].isin(iso_codes)].copy()
     logger.info(
         "filter_to_mediterranean | rows: %d → %d | removed: %d",
-        len(df),
-        len(result),
-        len(df) - len(result),
+        len(df), len(result), len(df) - len(result),
     )
     return result

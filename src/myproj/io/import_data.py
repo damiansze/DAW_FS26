@@ -12,15 +12,7 @@ import xarray as xr
 logger = logging.getLogger("myproj.io")
 
 # %% auto #0
-__all__ = [
-    "logger",
-    "PROJECT_ROOT",
-    "DATA_RAW",
-    "find_project_root",
-    "get_raw_file_path",
-    "load_raw_data",
-]
-
+__all__ = ['logger', 'PROJECT_ROOT', 'DATA_RAW', 'find_project_root', 'get_raw_file_path', 'load_raw_data']
 
 # %% ../../../notebooks/01_Import.ipynb #8f889341
 def find_project_root() -> Path:
@@ -46,7 +38,6 @@ def find_project_root() -> Path:
 PROJECT_ROOT = find_project_root()
 DATA_RAW = PROJECT_ROOT / "data" / "raw"
 
-
 # %% ../../../notebooks/01_Import.ipynb #d9e00604
 def get_raw_file_path(filename: str) -> Path:
     """
@@ -60,7 +51,6 @@ def get_raw_file_path(filename: str) -> Path:
 
     logger.debug("Rohdatei gefunden: %s", file_path)
     return file_path
-
 
 # %% ../../../notebooks/01_Import.ipynb #bd3b4471
 def load_raw_data(filename: str):
