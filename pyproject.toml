@@ -20,6 +20,7 @@ dependencies = [
     "ipykernel>=7.2.0",
     "nbdev>=3.0.15",
     "seaborn>=0.13.2",
+    "scipy>=1.17.1",
 ]
 
 [tool.setuptools]
