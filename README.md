@@ -6,6 +6,12 @@ Die Pipeline verknüpft Katastrophenereignisse aus EM-DAT mit täglichen Meeress
 
 ---
 
+## Project Goal
+
+Die beiden Datensätze (Mittelmeer-Meeresspiegel-Datensatz und Katastrophen-Datensatz) sollen so zusammengeführt werden, dass eine Analyse möglich ist, bei der der Einfluss des Meeresspiegels auf Überschwemmungsereignisse untersucht wird.
+
+---
+
 ## Datenquellen
 
 | Datei | Format | Inhalt |
