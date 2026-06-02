@@ -15,7 +15,8 @@ PROCESSED_DIR = PROJECT_ROOT / "data" / "processed"
 logger = logging.getLogger("myproj.io")
 
 # %% auto #0
-__all__ = ['PROCESSED_DIR', 'logger', 'save_processed_data']
+__all__ = ["PROCESSED_DIR", "logger", "save_processed_data"]
+
 
 # %% ../../../notebooks/06_Export.ipynb #352e2cfa
 def save_processed_data(df: pd.DataFrame, filename: str) -> Path:
@@ -25,6 +26,8 @@ def save_processed_data(df: pd.DataFrame, filename: str) -> Path:
     df.to_parquet(path, index=False)
     logger.info(
         "save_processed_data | file: %s | rows: %d | cols: %d",
-        filename, len(df), len(df.columns),
+        filename,
+        len(df),
+        len(df.columns),
     )
     return path

@@ -12,7 +12,14 @@ from .._utils import fmt_ids
 logger = logging.getLogger("myproj.cleaning")
 
 # %% auto #0
-__all__ = ['logger', 'drop_duplicates', 'drop_impossible_dates', 'drop_missing_start_year', 'impute_missing_measurements']
+__all__ = [
+    "logger",
+    "drop_duplicates",
+    "drop_impossible_dates",
+    "drop_missing_start_year",
+    "impute_missing_measurements",
+]
+
 
 # %% ../../../notebooks/03_Cleaning.ipynb #fca5a5a1
 def drop_duplicates(df: pd.DataFrame, id_col: str) -> pd.DataFrame:
@@ -22,6 +29,7 @@ def drop_duplicates(df: pd.DataFrame, id_col: str) -> pd.DataFrame:
     ids = df.loc[dup_mask, id_col].astype(str).tolist()
     logger.info("drop_duplicates | id_col: %s | removed: %d | %s", id_col, n, fmt_ids(ids))
     return df[~dup_mask].copy()
+
 
 # %% ../../../notebooks/03_Cleaning.ipynb #a18e6b41
 def drop_impossible_dates(
@@ -37,6 +45,7 @@ def drop_impossible_dates(
     logger.info("drop_impossible_dates | removed: %d | %s", n, fmt_ids(ids))
     return df[~mask].copy()
 
+
 # %% ../../../notebooks/03_Cleaning.ipynb #f1a881a4
 def drop_missing_start_year(
     df: pd.DataFrame,
@@ -49,6 +58,7 @@ def drop_missing_start_year(
     ids = df.loc[mask, id_col].astype(str).tolist()
     logger.info("drop_missing_start_year | removed: %d | %s", n, fmt_ids(ids))
     return df[~mask].copy()
+
 
 # %% ../../../notebooks/03_Cleaning.ipynb #92a36ee0
 def impute_missing_measurements(
@@ -72,5 +82,7 @@ def impute_missing_measurements(
         n = int(mask.sum())
         timestamps = df.loc[mask, time_col].dt.strftime("%Y-%m-%d").tolist()
         df[col] = df[col].interpolate(method="linear").ffill().bfill()
-        logger.info("impute_missing_measurements | col: %s | imputed: %d | %s", col, n, fmt_ids(timestamps))
+        logger.info(
+            "impute_missing_measurements | col: %s | imputed: %d | %s", col, n, fmt_ids(timestamps)
+        )
     return df

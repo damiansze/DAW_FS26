@@ -12,14 +12,27 @@ SEA_TREND = "trend_MSL_filtered_GIA_corrected_adjusted"
 DROP_COLS = [
     "Disaster Type",
     "Disaster Subgroup",
-    "Start Year", "Start Month", "Start Day",
-    "End Year",   "End Month",   "End Day",
+    "Start Year",
+    "Start Month",
+    "Start Day",
+    "End Year",
+    "End Month",
+    "End Day",
 ]
 
 logger = logging.getLogger("myproj.link")
 
 # %% auto #0
-__all__ = ['SEA_VALUE', 'SEA_TREND', 'DROP_COLS', 'logger', 'prepare_sea_level_ts', 'join_sea_level', 'drop_join_redundant_cols']
+__all__ = [
+    "SEA_VALUE",
+    "SEA_TREND",
+    "DROP_COLS",
+    "logger",
+    "prepare_sea_level_ts",
+    "join_sea_level",
+    "drop_join_redundant_cols",
+]
+
 
 # %% ../../../notebooks/05_Join.ipynb #9ecdb966
 def prepare_sea_level_ts(sea_level: pd.DataFrame, time_col: str = "time") -> pd.DataFrame:
@@ -28,13 +41,13 @@ def prepare_sea_level_ts(sea_level: pd.DataFrame, time_col: str = "time") -> pd.
     df[time_col] = pd.to_datetime(df[time_col])
     return df.sort_values(time_col).reset_index(drop=True)
 
+
 # %% ../../../notebooks/05_Join.ipynb #3afe2ddb
-def _mean_sea_level(
-    start: pd.Timestamp, end: pd.Timestamp, sea_msl_idx: pd.Series
-) -> float:
+def _mean_sea_level(start: pd.Timestamp, end: pd.Timestamp, sea_msl_idx: pd.Series) -> float:
     if pd.isna(start) or pd.isna(end) or end < start:
         return float("nan")
     return sea_msl_idx.loc[start:end].mean()
+
 
 # %% ../../../notebooks/05_Join.ipynb #5cb1e98c
 def join_sea_level(
@@ -45,33 +58,36 @@ def join_sea_level(
 ) -> pd.DataFrame:
     """Verknüpft EMDAT-Flood-Ereignisse mit Sea-Level-Messwerten."""
     df = emdat_flood.copy()
-    sea_msl_idx   = sea_level_ts.set_index("time")[sea_value]
+    sea_msl_idx = sea_level_ts.set_index("time")[sea_value]
     sea_trend_idx = sea_level_ts.set_index("time")[sea_trend]
 
     df["sea_level_at_start"] = df["start_date"].map(sea_msl_idx)
     df["sea_trend_at_start"] = df["start_date"].map(sea_trend_idx)
-    df["sea_level_at_end"]   = df["end_date"].map(sea_msl_idx)
+    df["sea_level_at_end"] = df["end_date"].map(sea_msl_idx)
     df["mean_sea_level_while_disaster"] = df.apply(
         lambda row: _mean_sea_level(row["start_date"], row["end_date"], sea_msl_idx),
         axis=1,
     )
 
     n_at_start = int(df["sea_level_at_start"].notna().sum())
-    n_mean     = int(df["mean_sea_level_while_disaster"].notna().sum())
+    n_mean = int(df["mean_sea_level_while_disaster"].notna().sum())
     logger.info(
         "join_sea_level | events: %d | sea_level_at_start_not_null: %d | mean_sea_level_not_null: %d",
-        len(df), n_at_start, n_mean,
+        len(df),
+        n_at_start,
+        n_mean,
     )
     return df
 
+
 # %% ../../../notebooks/05_Join.ipynb #8b3b5ca9
-def drop_join_redundant_cols(
-    df: pd.DataFrame, cols: list[str] = DROP_COLS
-) -> pd.DataFrame:
+def drop_join_redundant_cols(df: pd.DataFrame, cols: list[str] = DROP_COLS) -> pd.DataFrame:
     """Entfernt Spalten, die nach Filter und Join redundant sind."""
     result = df.drop(columns=cols).reset_index(drop=True)
     logger.info(
         "drop_join_redundant_cols | cols: %d → %d | dropped: %s",
-        df.shape[1], result.shape[1], cols,
+        df.shape[1],
+        result.shape[1],
+        cols,
     )
     return result

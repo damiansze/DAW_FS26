@@ -11,45 +11,60 @@ import pandas as pd
 logger = logging.getLogger("myproj.transform")
 
 # %% auto #0
-__all__ = ['logger', 'add_event_dates', 'add_derived_columns', 'add_sea_level_lags', 'add_sea_level_z_scores']
+__all__ = [
+    "logger",
+    "add_event_dates",
+    "add_derived_columns",
+    "add_sea_level_lags",
+    "add_sea_level_z_scores",
+]
+
 
 # %% ../../../notebooks/04_Transform.ipynb #05c43d4a
 def _make_event_date(df: pd.DataFrame, prefix: str) -> pd.Series:
     return pd.to_datetime(
-        pd.DataFrame({
-            "year":  pd.to_numeric(df[f"{prefix} Year"],  errors="coerce"),
-            "month": pd.to_numeric(df[f"{prefix} Month"], errors="coerce").fillna(1),
-            "day":   pd.to_numeric(df[f"{prefix} Day"],   errors="coerce").fillna(1),
-        }),
+        pd.DataFrame(
+            {
+                "year": pd.to_numeric(df[f"{prefix} Year"], errors="coerce"),
+                "month": pd.to_numeric(df[f"{prefix} Month"], errors="coerce").fillna(1),
+                "day": pd.to_numeric(df[f"{prefix} Day"], errors="coerce").fillna(1),
+            }
+        ),
         errors="coerce",
     )
+
 
 # %% ../../../notebooks/04_Transform.ipynb #c29ea87d
 def _date_quality(df: pd.DataFrame, prefix: str) -> pd.Series:
     month_missing = df[f"{prefix} Month"].isna()
-    day_missing   = df[f"{prefix} Day"].isna()
+    day_missing = df[f"{prefix} Day"].isna()
     return np.select(
         [month_missing & day_missing, month_missing, day_missing],
         ["month_and_day_imputed", "month_imputed", "day_imputed"],
         default="complete",
     )
 
+
 # %% ../../../notebooks/04_Transform.ipynb #e58b394b
 def add_event_dates(df: pd.DataFrame) -> pd.DataFrame:
     """Konstruiert start_date / end_date aus Year/Month/Day-Spalten und dokumentiert die Qualität."""
     df = df.copy()
-    df["start_date"]         = _make_event_date(df, "Start")
-    df["end_date"]           = _make_event_date(df, "End")
+    df["start_date"] = _make_event_date(df, "Start")
+    df["end_date"] = _make_event_date(df, "End")
     df["start_date_quality"] = _date_quality(df, "Start")
-    df["end_date_quality"]   = _date_quality(df, "End")
+    df["end_date_quality"] = _date_quality(df, "End")
     n_complete = int((df["start_date_quality"] == "complete").sum())
-    n_day      = int((df["start_date_quality"] == "day_imputed").sum())
-    n_both     = int((df["start_date_quality"] == "month_and_day_imputed").sum())
+    n_day = int((df["start_date_quality"] == "day_imputed").sum())
+    n_both = int((df["start_date_quality"] == "month_and_day_imputed").sum())
     logger.info(
         "add_event_dates | rows: %d | quality: complete=%d, day_imputed=%d, month_and_day_imputed=%d",
-        len(df), n_complete, n_day, n_both,
+        len(df),
+        n_complete,
+        n_day,
+        n_both,
     )
     return df
+
 
 # %% ../../../notebooks/04_Transform.ipynb #b93f0d10
 def _season_from_month(month: float) -> str:
@@ -64,18 +79,20 @@ def _season_from_month(month: float) -> str:
         return "summer"
     return "autumn"
 
+
 # %% ../../../notebooks/04_Transform.ipynb #3748ffaf
 def add_derived_columns(df: pd.DataFrame) -> pd.DataFrame:
     """Fügt season, event_duration_days und has_coordinates hinzu."""
     df = df.copy()
-    df["season"]              = df["Start Month"].apply(_season_from_month)
+    df["season"] = df["Start Month"].apply(_season_from_month)
     df["event_duration_days"] = ((df["end_date"] - df["start_date"]).dt.days + 1).clip(lower=1)
-    df["has_coordinates"]     = df[["Latitude", "Longitude"]].notna().all(axis=1)
+    df["has_coordinates"] = df[["Latitude", "Longitude"]].notna().all(axis=1)
     logger.info(
         "add_derived_columns | added: season, event_duration_days, has_coordinates | rows: %d",
         len(df),
     )
     return df
+
 
 # %% ../../../notebooks/04_Transform.ipynb #46fd0d50
 def add_sea_level_lags(
@@ -92,6 +109,7 @@ def add_sea_level_lags(
     logger.info("add_sea_level_lags | n_lags: %d | rows: %d", n_lags, len(df))
     return df
 
+
 # %% ../../../notebooks/04_Transform.ipynb #6224ce04
 def add_sea_level_z_scores(
     df: pd.DataFrame,
@@ -102,21 +120,27 @@ def add_sea_level_z_scores(
     """
     Fügt Z-Score-normierte Sea-Level-Spalten hinzu.
     Referenz: gesamte Sea-Level-Zeitreihe.
- 
+
     Loggt zusätzlich die Detrend-Referenz: Mittel/Streuung der Residuen (MSL − Trend)
     über die volle Reihe.
     """
     df = df.copy()
     msl_mean = sea_level_ts[sea_value].mean()
-    msl_std  = sea_level_ts[sea_value].std(ddof=0)
-    df["sea_level_at_start_z"]            = (df["sea_level_at_start"] - msl_mean) / msl_std
-    df["mean_sea_level_while_disaster_z"] = (df["mean_sea_level_while_disaster"] - msl_mean) / msl_std
- 
+    msl_std = sea_level_ts[sea_value].std(ddof=0)
+    df["sea_level_at_start_z"] = (df["sea_level_at_start"] - msl_mean) / msl_std
+    df["mean_sea_level_while_disaster_z"] = (
+        df["mean_sea_level_while_disaster"] - msl_mean
+    ) / msl_std
+
     detrend_resid = sea_level_ts[sea_value] - sea_level_ts[sea_trend]
     resid_mean = detrend_resid.mean()
-    resid_std  = detrend_resid.std(ddof=0)
+    resid_std = detrend_resid.std(ddof=0)
     logger.info(
         "add_sea_level_z_scores | msl_ref: μ=%.4f σ=%.4f cm | detrend_ref: residual_μ=%.4f σ=%.4f cm | rows: %d",
-        msl_mean, msl_std, resid_mean, resid_std, len(df),
+        msl_mean,
+        msl_std,
+        resid_mean,
+        resid_std,
+        len(df),
     )
     return df
