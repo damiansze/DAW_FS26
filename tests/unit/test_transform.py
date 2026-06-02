@@ -33,6 +33,7 @@ def _make_sea_level(values: list[float], dates: list[str]) -> pd.DataFrame:
         {
             "time": pd.to_datetime(dates),
             "MSL_filtered_GIA_corrected_adjusted": values,
+            "trend_MSL_filtered_GIA_corrected_adjusted": values,
         }
     )
 

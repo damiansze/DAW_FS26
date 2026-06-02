@@ -115,8 +115,15 @@ def add_sea_level_z_scores(
     df: pd.DataFrame,
     sea_level_ts: pd.DataFrame,
     sea_value: str = "MSL_filtered_GIA_corrected_adjusted",
+    sea_trend: str = "trend_MSL_filtered_GIA_corrected_adjusted",
 ) -> pd.DataFrame:
-    """Fügt Z-Score-normierte Sea-Level-Spalten hinzu. Referenz: gesamte Sea-Level-Zeitreihe."""
+    """
+    Fügt Z-Score-normierte Sea-Level-Spalten hinzu.
+    Referenz: gesamte Sea-Level-Zeitreihe.
+
+    Loggt zusätzlich die Detrend-Referenz: Mittel/Streuung der Residuen (MSL − Trend)
+    über die volle Reihe.
+    """
     df = df.copy()
     msl_mean = sea_level_ts[sea_value].mean()
     msl_std = sea_level_ts[sea_value].std(ddof=0)
@@ -124,10 +131,16 @@ def add_sea_level_z_scores(
     df["mean_sea_level_while_disaster_z"] = (
         df["mean_sea_level_while_disaster"] - msl_mean
     ) / msl_std
+
+    detrend_resid = sea_level_ts[sea_value] - sea_level_ts[sea_trend]
+    resid_mean = detrend_resid.mean()
+    resid_std = detrend_resid.std(ddof=0)
     logger.info(
-        "add_sea_level_z_scores | msl_ref: μ=%.4f σ=%.4f cm | rows: %d",
+        "add_sea_level_z_scores | msl_ref: μ=%.4f σ=%.4f cm | detrend_ref: residual_μ=%.4f σ=%.4f cm | rows: %d",
         msl_mean,
         msl_std,
+        resid_mean,
+        resid_std,
         len(df),
     )
     return df
