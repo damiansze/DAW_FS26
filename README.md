@@ -14,10 +14,10 @@ Die beiden Datensätze (Mittelmeer-Meeresspiegel-Datensatz und Katastrophen-Date
 
 ## Datenquellen
 
-| Datei | Format | Inhalt |
-|---|---|---|
-| `public_emdat_1991_2024.xlsx` | Excel | Katastrophenereignisse (EM-DAT), 1991–2024 |
-| `omi_climate_sl_medsea_area_averaged_anomalies_19990220_P20250729.nc` | NetCDF | Mittelmeer-Meeresspiegel-Anomalien, 1999–2024 |
+| Datei | Format | Inhalt | Quelle |
+|---|---|---|---|
+| `public_emdat_1991_2024.xlsx` | Excel | Katastrophenereignisse (EM-DAT), 1991–2024 | [EM-DAT](https://public.emdat.be/data) |
+| `omi_climate_sl_medsea_area_averaged_anomalies_19990220_P20250729.nc` | NetCDF | Mittelmeer-Meeresspiegel-Anomalien, 1999–2024 | [Copernicus Marine](https://data.marine.copernicus.eu/product/OMI_CLIMATE_SL_MEDSEA_area_averaged_anomalies/services) |
 
 Die Rohdaten liegen in `data/raw/` und sind via **Git LFS** versioniert.
 
